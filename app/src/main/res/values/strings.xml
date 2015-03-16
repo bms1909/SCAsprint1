@@ -1,0 +1,6 @@
+<resources>
+    <string name="app_name">SCAid5</string>
+
+    <string name="hello_world">Teste de uso de mapas</string>
+    <string name="action_settings">Settings</string>
+</resources>
