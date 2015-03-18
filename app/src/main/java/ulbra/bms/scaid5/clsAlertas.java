@@ -1,11 +1,20 @@
 package ulbra.bms.scaid5;
 
+import android.location.Location;
+import android.net.Uri;
+import android.util.Log;
+
 import com.google.android.gms.maps.model.LatLng;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.util.ArrayList;
+import java.util.concurrent.ExecutionException;
 
 /**
- * Created by Bruno on 13/03/2015.
+ * Criador por Bruno em 13/03/2015.
  */
 public class clsAlertas {
 
@@ -15,21 +24,52 @@ public class clsAlertas {
     public String descricaoAlerta;
     public int riscoAlerta;
 
-    public clsAlertas(int id, double latitude, double longitude,String descricao)
+    public clsAlertas(int id, double latitude, double longitude,String descricao,int tipo,int risco)
     {
         this.idUsuario=id;
         this.latlonAlerta= new LatLng(latitude, longitude);
         this.descricaoAlerta= descricao;
+        this.tipoAlerta=tipo;
+        this.riscoAlerta=risco;
     }
 
-    //TODO carregar do WebService
-    public static ArrayList<clsAlertas> carregaAlertas()
+    public static ArrayList<clsAlertas> carregaAlertas(Location local)
     {
         ArrayList<clsAlertas> retorno = new ArrayList<>();
-        retorno.add(new clsAlertas(7,-29.459916,-49.922834,"InicioQuadra"));
-        retorno.add(new clsAlertas(7,-29.4578,-49.924315,"neoclin"));
-        retorno.add(new clsAlertas(7,-29.459561,-49.923907,"escoteiros"));
-        retorno.add(new clsAlertas(7,-29.442516,-49.904445,"vinho sandy"));
+        clsJSONget executor= new clsJSONget();
+        JSONArray recebido = null;
+        JSONObject loop;
+
+        executor.execute("http://scaws.azurewebsites.net/api/clsAlertas?raioLongoemKM=" + 1 + "&lat=" + local.getLatitude() + "&lon=" + local.getLongitude());
+
+        try {
+            recebido = executor.get();
+        } catch (InterruptedException | ExecutionException e) {
+            Log.d(null, e.getMessage());
+        }
+
+        try {
+            if (recebido != null) {
+                for (int i = 0; i < recebido.length(); i++)
+                {
+                    loop = recebido.getJSONObject(i);
+                    retorno.add(new clsAlertas(loop.getInt("idAlerta"),loop.getDouble("latitudeAlerta"),loop.getDouble("longitudeAlerta"),loop.getString("descricaoAlerta"),loop.getInt("tipoAlerta"),loop.getInt("riscoAlerta")));
+                }
+            }
+        } catch (JSONException |NullPointerException e) {
+            Log.d(null, e.getMessage());
+        }
+
         return retorno;
     }
+    public boolean cadastraAlerta()
+    {
+        return clsJSONpost.executaPost("http://scaws.azurewebsites.net/api/clsAlertas?idUsuario="+this.idUsuario+"&lat="+this.latlonAlerta.latitude+"&lon="+this.latlonAlerta.longitude+"&tipo="+this.tipoAlerta+"&descricao="+Uri.encode(this.descricaoAlerta)+"&risco="+this.riscoAlerta);
+    }
+
+    public static boolean denunciaAlerta(int idAlerta)
+    {
+        return clsJSONpost.executaPost("http://scaws.azurewebsites.net/api/clsAlertas?idAlerta="+idAlerta);
+    }
+
 }
