@@ -1,9 +1,14 @@
 package ulbra.bms.scaid5;
 
 import android.app.AlertDialog;
+import android.content.Context;
+import android.content.DialogInterface;
+import android.content.Intent;
 import android.location.Location;
+import android.location.LocationManager;
 import android.os.Bundle;
 import android.support.v7.app.ActionBarActivity;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.Toast;
@@ -13,8 +18,8 @@ import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.MapFragment;
 import com.google.android.gms.maps.OnMapReadyCallback;
-import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
@@ -34,30 +39,26 @@ public class MainActivity extends ActionBarActivity implements OnMapReadyCallbac
     private void carregaMarcadores()
     {
         alertasCarregados = clsAlertas.carregaAlertas(mLastLocation);
-        estabelecimentosCarregados = clsEstabelecimentos.estabelecimentosPorRaio(1,mLastLocation);
-       //TODO sessão de testes dos métodos
+        estabelecimentosCarregados = clsEstabelecimentos.estabelecimentosPorRaio(1, mLastLocation);
+        //TODO sessão de testes dos métodos
 
-        if (alertasCarregados.size()==0||estabelecimentosCarregados.size()==0)
-        {
-            Toast.makeText(this, "Não foi possível fazer o download das informações atualizadas, se o erro persistir, confira sua conexão com a internet e abra o aplicativo novamente", Toast.LENGTH_LONG).show();
-        }
-        else
-        {
+        if (alertasCarregados.size() == 0 || estabelecimentosCarregados.size() == 0) {
+            Toast.makeText(this, "Não foi possível fazer o download das informações atualizadas, se o erro persistir, confira sua conexão com a internet e abra o aplicativo novamente",Toast.LENGTH_LONG).show();
+        } else {
             //foreach do java
-            for (clsAlertas percorre : alertasCarregados)
-            {
+            for (clsAlertas percorre : alertasCarregados) {
                 // .icon personaliza o ícone,
                 //adiciona o marcador ver https://developers.google.com/maps/documentation/android/marker#customize_the_marker_image
                 objMapa.addMarker(new MarkerOptions().position(percorre.latlonAlerta).title(percorre.descricaoAlerta).icon(BitmapDescriptorFactory.fromResource(R.drawable.common_signin_btn_icon_focus_light)));
             }
-            for (clsEstabelecimentos percorre : estabelecimentosCarregados)
-            {
+            for (clsEstabelecimentos percorre : estabelecimentosCarregados) {
                 // .icon personaliza o ícone,
                 //adiciona o marcador ver https://developers.google.com/maps/documentation/android/marker#customize_the_marker_image
                 objMapa.addMarker(new MarkerOptions().position(percorre.latlonEstabelecimento).title(percorre.nomeEstabelecimento).icon(BitmapDescriptorFactory.fromResource(R.drawable.common_signin_btn_icon_focus_dark)));
             }
         }
     }
+
 
     @Override
     /* ativado quando o mapa estiver instanciado */
@@ -92,32 +93,72 @@ public class MainActivity extends ActionBarActivity implements OnMapReadyCallbac
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-            //referencia o <fragment> do xml e obtém o mapa
-        SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
-                .findFragmentById(R.id.map);
-        mapFragment.getMapAsync(this);
-
-            //constroi o objeto GoogleApiclient para obter localização do usuário
-        mGoogleApiClient = new GoogleApiClient.Builder(this)
-                .addConnectionCallbacks(this)
-                .addOnConnectionFailedListener(this)
-                .addApi(LocationServices.API)
-                .build();
-        //conecta o googleApiClient, provocando o início do método abaixo
-        mGoogleApiClient.connect();
-
     }
+
+//ativado após o retorno da activity ao foco principal
+    @Override
+    protected void onPostResume()
+    {
+        super.onPostResume();
+        LocationManager locationManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
+        if( !locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER) ) {
+
+            DialogInterface.OnClickListener dialogClickListener = new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    switch (which){
+                        case DialogInterface.BUTTON_POSITIVE:
+                            startActivity(new Intent(android.provider.Settings.ACTION_LOCATION_SOURCE_SETTINGS));
+                            break;
+                        case DialogInterface.BUTTON_NEGATIVE:
+                            finish();
+                            break;
+                    }
+                }
+            };
+            AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            builder.setTitle("Localização Desativada");  // GPS not found
+            builder.setMessage("Este aplicativo utiliza sua localização, deseja habilitar agora?");
+            builder.setPositiveButton("Sim", dialogClickListener).setNegativeButton("Não",dialogClickListener);
+            builder.create().show();
+        }
+
+        if(mGoogleApiClient==null) {
+            mGoogleApiClient = new GoogleApiClient.Builder(this)
+                    .addConnectionCallbacks(this)
+                    .addOnConnectionFailedListener(this)
+                    .addApi(LocationServices.API)
+                    .build();
+            //conecta o googleApiClient, provocando o início do método abaixo
+            mGoogleApiClient.connect();
+
+            //referencia o <fragment> do xml e obtém o mapa
+            MapFragment mapFragment = (MapFragment) getFragmentManager()
+                    .findFragmentById(R.id.map);
+            mapFragment.getMapAsync(this);
+        }
+    }
+
+
 
     @Override
     public void onConnected(Bundle bundle) {
-        mLastLocation = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
 
-        LatLng localInicial = new LatLng(mLastLocation.getLatitude(), mLastLocation.getLongitude());
-        //desloca a visualização do mapa para a coordenada informada
-        objMapa.moveCamera(CameraUpdateFactory.newLatLngZoom(localInicial,17));
+        //TODO mLastLocation não pega ultima localização
+            mLastLocation = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
+                try {
+                    LatLng localInicial = new LatLng(mLastLocation.getLatitude(), mLastLocation.getLongitude());
+                    //desloca a visualização do mapa para a coordenada informada
+                    objMapa.moveCamera(CameraUpdateFactory.newLatLngZoom(localInicial, 17));
 
-        //carrega os itens do mapa
-        carregaMarcadores();
+                    //carrega os itens do mapa
+                    carregaMarcadores();
+                }
+                catch (NullPointerException e)
+                {
+                    Log.d(null,e.getMessage());
+                }
+
     }
 
 
@@ -149,5 +190,5 @@ public class MainActivity extends ActionBarActivity implements OnMapReadyCallbac
     public void onConnectionSuspended(int i) {    }
 
     @Override
-    public void onConnectionFailed(ConnectionResult connectionResult) {    }
+    public void onConnectionFailed(ConnectionResult connectionResult) {   }
 }
