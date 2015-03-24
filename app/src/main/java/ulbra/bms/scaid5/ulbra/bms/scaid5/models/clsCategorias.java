@@ -1,4 +1,4 @@
-package ulbra.bms.scaid5;
+package ulbra.bms.scaid5.ulbra.bms.scaid5.models;
 
 import android.util.Log;
 
@@ -7,6 +7,8 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.concurrent.ExecutionException;
+
+import ulbra.bms.scaid5.clsJSONget;
 
 /**
  * Criador por Bruno em 18/03/2015.

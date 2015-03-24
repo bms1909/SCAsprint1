@@ -1,4 +1,4 @@
-package ulbra.bms.scaid5;
+package ulbra.bms.scaid5.ulbra.bms.scaid5.models;
 
 import android.location.Location;
 import android.net.Uri;
@@ -12,6 +12,9 @@ import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.concurrent.ExecutionException;
+
+import ulbra.bms.scaid5.clsJSONget;
+import ulbra.bms.scaid5.clsJSONpost;
 
 /**
  * Criador por Bruno em 16/03/2015.
@@ -129,7 +132,7 @@ public class clsEstabelecimentos {
 
     public boolean avaliaEstabelecimento(int notaAvaliacao)
     {
-        return clsJSONpost.executaPost("http://scaws.azurewebsites.net/api/clsEstabelecimentos?idEstabelecimento="+this.idEstabelecimento+"&nota="+notaAvaliacao);
+        return clsJSONpost.executaPost("http://scaws.azurewebsites.net/api/clsEstabelecimentos?idEstabelecimento=" + this.idEstabelecimento + "&nota=" + notaAvaliacao);
     }
 
     public boolean cadastraEstabelecimento(int notaAvaliacao)

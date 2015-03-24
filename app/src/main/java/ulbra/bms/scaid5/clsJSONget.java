@@ -17,6 +17,20 @@ import java.net.URL;
  */
 public class clsJSONget extends AsyncTask<String,Void,JSONArray> {
 
+    public static boolean temInternet()
+    {
+        Runtime runtime = Runtime.getRuntime();
+        try {
+        //8.8.8.8 refere-se ao servidor de DNS do Google
+            Process ipProcess = runtime.exec("/system/bin/ping -c 1 8.8.8.8");
+            int     exitValue = ipProcess.waitFor();
+            return (exitValue == 0);
+
+        } catch (IOException | InterruptedException e)          { e.printStackTrace(); }
+
+        return false;
+    }
+
     @Override
     protected JSONArray doInBackground(String... params) {
         JSONArray retorno = null;
@@ -38,9 +52,7 @@ public class clsJSONget extends AsyncTask<String,Void,JSONArray> {
             conn.setRequestMethod("GET");
             conn.setDoInput(true);
 
-            // faz o download
-            conn.connect();
-
+            // geInputStream faz o download
             //conversao de inputstream para string
             IOUtils.copy(conn.getInputStream(), intermediario);
             String conteudo =  intermediario.toString();

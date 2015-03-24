@@ -1,4 +1,4 @@
-package ulbra.bms.scaid5;
+package ulbra.bms.scaid5.ulbra.bms.scaid5.models;
 
 import android.location.Location;
 import android.net.Uri;
@@ -12,6 +12,9 @@ import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.concurrent.ExecutionException;
+
+import ulbra.bms.scaid5.clsJSONget;
+import ulbra.bms.scaid5.clsJSONpost;
 
 /**
  * Criador por Bruno em 13/03/2015.
@@ -49,7 +52,8 @@ public class clsAlertas {
         }
 
         try {
-            if (recebido != null) {
+            if (recebido != null)
+            {
                 for (int i = 0; i < recebido.length(); i++)
                 {
                     loop = recebido.getJSONObject(i);
@@ -59,12 +63,11 @@ public class clsAlertas {
         } catch (JSONException |NullPointerException e) {
             Log.d(null, e.getMessage());
         }
-
         return retorno;
     }
     public boolean cadastraAlerta()
     {
-        return clsJSONpost.executaPost("http://scaws.azurewebsites.net/api/clsAlertas?idUsuario="+this.idUsuario+"&lat="+this.latlonAlerta.latitude+"&lon="+this.latlonAlerta.longitude+"&tipo="+this.tipoAlerta+"&descricao="+Uri.encode(this.descricaoAlerta)+"&risco="+this.riscoAlerta);
+        return clsJSONpost.executaPost("http://scaws.azurewebsites.net/api/clsAlertas?idUsuario=" + this.idUsuario + "&lat=" + this.latlonAlerta.latitude + "&lon=" + this.latlonAlerta.longitude + "&tipo=" + this.tipoAlerta + "&descricao=" + Uri.encode(this.descricaoAlerta) + "&risco=" + this.riscoAlerta);
     }
 
     public static boolean denunciaAlerta(int idAlerta)
