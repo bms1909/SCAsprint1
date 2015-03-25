@@ -8,7 +8,7 @@ import org.json.JSONObject;
 
 import java.util.concurrent.ExecutionException;
 
-import ulbra.bms.scaid5.clsJSONget;
+import ulbra.bms.scaid5.controllers.clsJSONget;
 
 /**
  * Criador por Bruno em 18/03/2015.
@@ -17,22 +17,13 @@ import ulbra.bms.scaid5.clsJSONget;
 public class clsCategorias {
     private int idCategoria;
     private String nomeCategoria;
-    private clsCategorias(int id,String nome)
-    {
-        this.idCategoria=id;
-        this.nomeCategoria=nome;
+
+    private clsCategorias(int id, String nome) {
+        this.idCategoria = id;
+        this.nomeCategoria = nome;
     }
 
-    public int getIdCategoria() {
-        return idCategoria;
-    }
-
-    public String getNomeCategoria() {
-        return nomeCategoria;
-    }
-
-    public static clsCategorias carregaCategorias()
-    {
+    public static clsCategorias carregaCategorias() {
         clsCategorias retorno = null;
         clsJSONget executor = new clsJSONget();
         JSONArray recebido = null;
@@ -46,7 +37,7 @@ public class clsCategorias {
             Log.d(null, e.getMessage());
         }
 
-        if(recebido!=null) {
+        if (recebido != null) {
             try {
                 loop = recebido.getJSONObject(0);
                 retorno = new clsCategorias(loop.getInt("idCategoria"), loop.getString("nomeCategoria"));
@@ -56,5 +47,13 @@ public class clsCategorias {
             }
         }
         return retorno;
+    }
+
+    public int getIdCategoria() {
+        return idCategoria;
+    }
+
+    public String getNomeCategoria() {
+        return nomeCategoria;
     }
 }

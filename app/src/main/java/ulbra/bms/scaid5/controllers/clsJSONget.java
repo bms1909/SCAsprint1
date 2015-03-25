@@ -1,4 +1,4 @@
-package ulbra.bms.scaid5;
+package ulbra.bms.scaid5.controllers;
 
 import android.os.AsyncTask;
 import android.util.Log;
@@ -15,18 +15,19 @@ import java.net.URL;
 /**
  * Criador por Bruno em 17/03/2015.
  */
-public class clsJSONget extends AsyncTask<String,Void,JSONArray> {
+public class clsJSONget extends AsyncTask<String, Void, JSONArray> {
 
-    public static boolean temInternet()
-    {
+    public static boolean temInternet() {
         Runtime runtime = Runtime.getRuntime();
         try {
-        //8.8.8.8 refere-se ao servidor de DNS do Google
+            //8.8.8.8 refere-se ao servidor de DNS do Google
             Process ipProcess = runtime.exec("/system/bin/ping -c 1 8.8.8.8");
-            int     exitValue = ipProcess.waitFor();
+            int exitValue = ipProcess.waitFor();
             return (exitValue == 0);
 
-        } catch (IOException | InterruptedException e)          { e.printStackTrace(); }
+        } catch (IOException | InterruptedException e) {
+            e.printStackTrace();
+        }
 
         return false;
     }
@@ -36,12 +37,11 @@ public class clsJSONget extends AsyncTask<String,Void,JSONArray> {
         JSONArray retorno = null;
 
         StringBuilder builder = new StringBuilder();
-        for(String s : params)
-        {
+        for (String s : params) {
             builder.append(s);
         }
 
-        String url=builder.toString();
+        String url = builder.toString();
         try {
             ByteArrayOutputStream intermediario = new ByteArrayOutputStream();  //intermediario para transformar o url em stream
             URL link = new URL(url);
@@ -55,14 +55,13 @@ public class clsJSONget extends AsyncTask<String,Void,JSONArray> {
             // geInputStream faz o download
             //conversao de inputstream para string
             IOUtils.copy(conn.getInputStream(), intermediario);
-            String conteudo =  intermediario.toString();
-            if (conteudo.startsWith("{"))
-            {
-                builder= new StringBuilder();
+            String conteudo = intermediario.toString();
+            if (conteudo.startsWith("{")) {
+                builder = new StringBuilder();
                 builder.append("[");
                 builder.append(conteudo);
                 builder.append("]");
-                conteudo=builder.toString();
+                conteudo = builder.toString();
             }
             try {
                 retorno = new JSONArray(conteudo); //converte os dados recebidos de uma string para um objeto manipulável
@@ -71,7 +70,7 @@ public class clsJSONget extends AsyncTask<String,Void,JSONArray> {
             }
 
         } catch (IOException o) {
-            Log.d(null,o.getMessage());
+            Log.d(null, o.getMessage());
         }
         return retorno;
     }

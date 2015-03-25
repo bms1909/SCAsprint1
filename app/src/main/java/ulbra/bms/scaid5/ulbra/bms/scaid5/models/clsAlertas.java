@@ -13,8 +13,8 @@ import org.json.JSONObject;
 import java.util.ArrayList;
 import java.util.concurrent.ExecutionException;
 
-import ulbra.bms.scaid5.clsJSONget;
-import ulbra.bms.scaid5.clsJSONpost;
+import ulbra.bms.scaid5.controllers.clsJSONget;
+import ulbra.bms.scaid5.controllers.clsJSONpost;
 
 /**
  * Criador por Bruno em 13/03/2015.
@@ -36,14 +36,14 @@ public class clsAlertas {
         this.riscoAlerta=risco;
     }
 
-    public static ArrayList<clsAlertas> carregaAlertas(Location local)
+    public static ArrayList<clsAlertas> carregaAlertas(int raio, Location local)
     {
         ArrayList<clsAlertas> retorno = new ArrayList<>();
         clsJSONget executor= new clsJSONget();
         JSONArray recebido = null;
         JSONObject loop;
 
-        executor.execute("http://scaws.azurewebsites.net/api/clsAlertas?raioLongoemKM=" + 1 + "&lat=" + local.getLatitude() + "&lon=" + local.getLongitude());
+        executor.execute("http://scaws.azurewebsites.net/api/clsAlertas?raioLongoemKM=" + raio + "&lat=" + local.getLatitude() + "&lon=" + local.getLongitude());
 
         try {
             recebido = executor.get();
@@ -65,14 +65,15 @@ public class clsAlertas {
         }
         return retorno;
     }
-    public boolean cadastraAlerta()
-    {
-        return clsJSONpost.executaPost("http://scaws.azurewebsites.net/api/clsAlertas?idUsuario=" + this.idUsuario + "&lat=" + this.latlonAlerta.latitude + "&lon=" + this.latlonAlerta.longitude + "&tipo=" + this.tipoAlerta + "&descricao=" + Uri.encode(this.descricaoAlerta) + "&risco=" + this.riscoAlerta);
-    }
 
     public static boolean denunciaAlerta(int idAlerta)
     {
-        return clsJSONpost.executaPost("http://scaws.azurewebsites.net/api/clsAlertas?idAlerta="+idAlerta);
+        return clsJSONpost.executaPost("http://scaws.azurewebsites.net/api/clsAlertas?idAlerta=" + idAlerta);
+    }
+
+    public boolean cadastraAlerta()
+    {
+        return clsJSONpost.executaPost("http://scaws.azurewebsites.net/api/clsAlertas?idUsuario=" + this.idUsuario + "&lat=" + this.latlonAlerta.latitude + "&lon=" + this.latlonAlerta.longitude + "&tipo=" + this.tipoAlerta + "&descricao=" + Uri.encode(this.descricaoAlerta) + "&risco=" + this.riscoAlerta);
     }
 
 }

@@ -1,4 +1,4 @@
-package ulbra.bms.scaid5;
+package ulbra.bms.scaid5.controllers;
 
 import android.app.AlertDialog;
 import android.content.Context;
@@ -14,10 +14,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.Toast;
 
-import com.google.android.gms.common.ConnectionResult;
-import com.google.android.gms.common.api.GoogleApiClient;
-import com.google.android.gms.location.LocationRequest;
-import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapFragment;
@@ -27,22 +24,20 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
-import java.util.ArrayList;
-
+import ulbra.bms.scaid5.R;
 import ulbra.bms.scaid5.ulbra.bms.scaid5.models.clsAlertas;
+import ulbra.bms.scaid5.ulbra.bms.scaid5.models.clsApiClientSingleton;
 import ulbra.bms.scaid5.ulbra.bms.scaid5.models.clsEstabelecimentos;
 
 //adicionar a implementação de um monte de coisa
-public class MainActivity extends ActionBarActivity implements OnMapReadyCallback,GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener,GoogleMap.OnMarkerClickListener{
+public class MainActivity extends ActionBarActivity implements OnMapReadyCallback, GoogleMap.OnMarkerClickListener {
 
-        private boolean segueUsuario;
-        private GoogleApiClient mGoogleApiClient;
-        private Location mLocalAtual;
-        private Location mLocalUltCarga;
+    private boolean segueUsuario;
         private GoogleMap objMapa;
-        private ArrayList<clsAlertas> alertasCarregados;
-        private ArrayList<clsEstabelecimentos> estabelecimentosCarregados;
-        com.google.android.gms.location.LocationListener mLocationListener;
+    private Location mLocalAtual;
+    private Location mLocalUltimaCargaMarcadores;
+    private LocationListener mLocationListener;
+    private clsApiClientSingleton mGerenciadorApiClient;
 
         private boolean carregaMarcadores()
         {
@@ -51,24 +46,14 @@ public class MainActivity extends ActionBarActivity implements OnMapReadyCallbac
                 return false;
             }
             else {
-
-                alertasCarregados = clsAlertas.carregaAlertas(mLocalAtual);
-                estabelecimentosCarregados = clsEstabelecimentos.estabelecimentosPorRaio(1, mLocalAtual);
-                //TODO sessão de testes dos métodos ,deu pau
-                // clsAlertas a = new clsAlertas(0,-29.332299, -49.751436,"ulbra",0,0);
-                //a.cadastraAlerta();
-                //
-
-
+                //carrega as listas de objetos alertas e estabelecimentos do webService
                 //foreach do java
-                for (clsAlertas percorre : alertasCarregados) {
+                for (clsAlertas percorre : clsAlertas.carregaAlertas(1, mLocalAtual)) {
                     // .icon personaliza o ícone,
                     //adiciona o marcador ver https://developers.google.com/maps/documentation/android/marker#customize_the_marker_image
                     objMapa.addMarker(new MarkerOptions().position(percorre.latlonAlerta).title(percorre.descricaoAlerta).icon(BitmapDescriptorFactory.fromResource(R.drawable.common_signin_btn_icon_focus_light)));
                 }
-                for (clsEstabelecimentos percorre : estabelecimentosCarregados) {
-                    // .icon personaliza o ícone,
-                    //adiciona o marcador ver https://developers.google.com/maps/documentation/android/marker#customize_the_marker_image
+                for (clsEstabelecimentos percorre : clsEstabelecimentos.estabelecimentosPorRaio(1, mLocalAtual)) {
                     objMapa.addMarker(new MarkerOptions().position(percorre.latlonEstabelecimento).title(percorre.nomeEstabelecimento).icon(BitmapDescriptorFactory.fromResource(R.drawable.common_signin_btn_icon_focus_dark)));
                 }
                 return true;
@@ -106,13 +91,35 @@ public class MainActivity extends ActionBarActivity implements OnMapReadyCallbac
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        //confere e cria o listener local de localização e implementa o método de monitoramento do mesmo
+        if (mLocationListener == null) {
+            mLocationListener = new LocationListener() {
+                @Override
+                public void onLocationChanged(Location location) {
+                    mLocalAtual = location;
+                    moveCamera();
+                    //se não houver nenhuma carga de dados anterior, executa
+                    if (mLocalUltimaCargaMarcadores == null) {
+                        mLocalUltimaCargaMarcadores = mLocalAtual;
+                        carregaMarcadores();
+                    }
+                    //compara a distância da última carga de dados realizada com a atual, em metros
+                    else if (mLocalAtual.distanceTo(mLocalUltimaCargaMarcadores) > 300) {
+                        mLocalUltimaCargaMarcadores = mLocalAtual;
+                        carregaMarcadores();
+                    }
+
+
+                }
+            };
+        }
     }
     @Override
     protected void onPause()
     {
         super.onPause();
-        if(mGoogleApiClient!=null && mLocationListener !=null)
-            LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient,mLocationListener);
+        //TODO dando pau aqui
+//        mApiClient.suspendeLocalizacao(mLocationListener);
 
     }
 
@@ -128,9 +135,10 @@ public class MainActivity extends ActionBarActivity implements OnMapReadyCallbac
     protected void onPostResume()
     {
         super.onPostResume();
+        //confere se o GPS está ligado
         LocationManager locationManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
-
-        if( !locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER) ) {
+        //cria uma caixa de diálogo caso o GPS esteja desligado
+        if (!locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
 
             DialogInterface.OnClickListener dialogClickListener = new DialogInterface.OnClickListener() {
                 @Override
@@ -159,18 +167,9 @@ public class MainActivity extends ActionBarActivity implements OnMapReadyCallbac
         }
         else
         {
-            if(mGoogleApiClient==null) {
-                mGoogleApiClient = new GoogleApiClient.Builder(this)
-                        .addConnectionCallbacks(this)
-                        .addOnConnectionFailedListener(this)
-                        .addApi(LocationServices.API)
-                        .build();
-                //conecta o googleApiClient, provocando o início do método abaixo
-                mGoogleApiClient.connect();
-            }
-            else {
-                solicitaLocalizacao();
-            }
+            //obtem uma instancia singleton do objeto, registrando seu próprio listener
+            mGerenciadorApiClient = clsApiClientSingleton.getInstance(this, mLocationListener);
+            //TODO utilizar onSavedInstance para manter o objeto de mapa utilizável
             if(objMapa==null)
             {
                 //prepara o mapa como objeto, provoca onmapready
@@ -178,8 +177,10 @@ public class MainActivity extends ActionBarActivity implements OnMapReadyCallbac
                         .findFragmentById(R.id.map);
                 mapFragment.getMapAsync(this);
             }
+            //   carregaMarcadores();
         }
     }
+
     private void moveCamera()
     {
         try
@@ -190,53 +191,16 @@ public class MainActivity extends ActionBarActivity implements OnMapReadyCallbac
         }
         catch (NullPointerException e)
         {
-            Log.d(null,e.getMessage());
+            Log.d("erro ao mover camera", e.getMessage());
         }
     }
-    private void solicitaLocalizacao()
-    {
-        LocationServices.FusedLocationApi.requestLocationUpdates(
-                mGoogleApiClient, (
-                        new LocationRequest()
-                                .setInterval(10000)
-                                .setFastestInterval(5000)
-                                .setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY))
-                ,mLocationListener);
-    }
+
     public void btnSigaMeClick(View a)
     {
         segueUsuario = !segueUsuario;
     }
 
-    @Override
-    public void onConnected(Bundle bundle) {
-        mLocalAtual = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
-        mLocalUltCarga=mLocalAtual;
-        if(mLocalAtual != null)
-        {
-            moveCamera();
-            carregaMarcadores();
-        }
-        //registra pedido de atualização da localização
-        mLocationListener = new com.google.android.gms.location.LocationListener() {
-            @Override
-            public void onLocationChanged(Location location) {
-                //disparado a cada atualização na localização
 
-                mLocalAtual = location;
-                if (segueUsuario)
-                    moveCamera();
-                if(mLocalAtual.distanceTo(mLocalUltCarga)>100)
-                {
-                    if(carregaMarcadores())
-                    {
-                        mLocalUltCarga=mLocalAtual;
-                    }
-                }
-            }
-        };
-        solicitaLocalizacao();
-    }
 
 
 
@@ -290,11 +254,5 @@ public class MainActivity extends ActionBarActivity implements OnMapReadyCallbac
         return super.onOptionsItemSelected(item);
     }
 
-    //métodos implementados pelo googleApiclient
 
-    @Override
-    public void onConnectionSuspended(int i) {    }
-
-    @Override
-    public void onConnectionFailed(ConnectionResult connectionResult) {   }
 }
