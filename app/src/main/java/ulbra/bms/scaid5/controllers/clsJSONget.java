@@ -66,11 +66,11 @@ public class clsJSONget extends AsyncTask<String, Void, JSONArray> {
             try {
                 retorno = new JSONArray(conteudo); //converte os dados recebidos de uma string para um objeto manipulável
             } catch (JSONException e) {
-                Log.d(null, e.getMessage());
+                Log.d("pau no json", e.getMessage());
             }
 
         } catch (IOException o) {
-            Log.d(null, o.getMessage());
+            Log.d("defeito feio ao carrega", o.getMessage());
         }
         return retorno;
     }

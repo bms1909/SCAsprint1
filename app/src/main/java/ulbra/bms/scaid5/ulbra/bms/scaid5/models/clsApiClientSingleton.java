@@ -19,7 +19,7 @@ public class clsApiClientSingleton {
 
     private static final clsApiClientSingleton INSTANCE = new clsApiClientSingleton();
     private GoogleApiClient mGoogleApiClient;
-
+    private LocationListener mLocationListener;
 
     private clsApiClientSingleton() {
     }
@@ -28,18 +28,24 @@ public class clsApiClientSingleton {
     public static clsApiClientSingleton getInstance(Context contexto, LocationListener mLocationListener) {
         if (INSTANCE.mGoogleApiClient == null) {
             criaApiClient(contexto, mLocationListener);
+        } else if (!INSTANCE.mGoogleApiClient.isConnected()) {
+            INSTANCE.mLocationListener = mLocationListener;
+            INSTANCE.mGoogleApiClient.connect();
+        } else if (mLocationListener == INSTANCE.mLocationListener) {
+            solicitaLocalizacao(INSTANCE.mLocationListener);
+        } else {
+            solicitaLocalizacao(mLocationListener);
         }
-
         return INSTANCE;
     }
 
-    private static void criaApiClient(Context contexto, final LocationListener mLocationListener) {
+    private static void criaApiClient(Context contexto, LocationListener mLocationListener) {
         //contexto é pai de toda a activity, sendo o mesmo para o aplicativo inteiro
         INSTANCE.mGoogleApiClient = new GoogleApiClient.Builder(contexto)
                 .addConnectionCallbacks(new GoogleApiClient.ConnectionCallbacks() {
                     @Override
                     public void onConnected(Bundle bundle) {
-                        solicitaLocalizacao(mLocationListener);
+                        solicitaLocalizacao(INSTANCE.mLocationListener);
                     }
 
                     @Override
@@ -59,6 +65,7 @@ public class clsApiClientSingleton {
     }
 
     private static void solicitaLocalizacao(LocationListener mLocationListener) {
+        if (INSTANCE.mGoogleApiClient.isConnected()) {
         LocationServices.FusedLocationApi.requestLocationUpdates(
                 INSTANCE.mGoogleApiClient, (
                         new LocationRequest()
@@ -66,6 +73,20 @@ public class clsApiClientSingleton {
                                 .setFastestInterval(5000)
                                 .setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY))
                 , mLocationListener);
+         /*LocationListener teste = new LocationListener() {
+             @Override
+             public void onLocationChanged(Location location) {
+                 INSTANCE.mLocationListener=null;
+             }
+         };
+         LocationServices.FusedLocationApi.requestLocationUpdates(
+                    INSTANCE.mGoogleApiClient, (
+                            new LocationRequest()
+                                    .setInterval(10000)
+                                    .setFastestInterval(5000)
+                                    .setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY))
+                    , teste);*/
+        }
     }
 
     public void retomaLocalizacao(Context contexto, LocationListener mLocationListener) {
