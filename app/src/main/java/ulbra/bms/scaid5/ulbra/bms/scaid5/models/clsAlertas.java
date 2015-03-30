@@ -47,9 +47,12 @@ public class clsAlertas {
 
         try {
             recebido = executor.get();
-        } catch (InterruptedException | ExecutionException e) {
-            Log.d(null, e.getMessage());
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } catch (ExecutionException e) {
+            e.printStackTrace();
         }
+
 
         try {
             if (recebido != null)

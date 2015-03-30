@@ -19,34 +19,37 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapFragment;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
+import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+
+import java.util.Date;
 
 import ulbra.bms.scaid5.R;
 import ulbra.bms.scaid5.ulbra.bms.scaid5.models.clsAlertas;
 import ulbra.bms.scaid5.ulbra.bms.scaid5.models.clsApiClientSingleton;
 import ulbra.bms.scaid5.ulbra.bms.scaid5.models.clsEstabelecimentos;
 
-//adicionar a implementação de um monte de coisa
+/**
+ * Criado por Bruno on 19/03/2015.
+ * classe padrão que atua como controller da tela activity_main
+ */
 public class MainActivity extends ActionBarActivity implements OnMapReadyCallback, GoogleMap.OnMarkerClickListener {
 
-    public final StringBuilder a = new StringBuilder();
-    public GoogleMap objMapa;
+    private GoogleMap objMapa;
     private boolean segueUsuario;
-    private Location mLocalAtual;
     private Location mLocalUltimaCargaMarcadores;
     private LocationListener mLocationListener;
     private clsApiClientSingleton mGerenciadorApiClient;
 
 
-    private void moveCamera(GoogleMap meumapalindo) {
+    private void moveCamera(Location localAtual) {
         try
         {
-            a.append("5");
             //desloca a visualização do mapa para a coordenada informada
 
-            meumapalindo.animateCamera(CameraUpdateFactory.newLatLngZoom((new LatLng(mLocalAtual.getLatitude(), mLocalAtual.getLongitude())), 17), new GoogleMap.CancelableCallback() {
+            objMapa.animateCamera(CameraUpdateFactory.newLatLngZoom((new LatLng(localAtual.getLatitude(), localAtual.getLongitude())), 17), new GoogleMap.CancelableCallback() {
                 @Override
                 public void onFinish() {
                 }
@@ -62,47 +65,47 @@ public class MainActivity extends ActionBarActivity implements OnMapReadyCallbac
         }
     }
 
-    public boolean carregaMarcadores() {
-        a.append("6");
+    public void carregaMarcadores(Location localCarga, int raioCargaMarcadores) {
         if (objMapa != null) {
             if (!clsJSONget.temInternet()) {
                 Toast.makeText(this, "Sem acesso a internet, as informações podem estar desatualizadas", Toast.LENGTH_LONG).show();
-                return false;
             } else {
                 //carrega as listas de objetos alertas e estabelecimentos do webService
                 //foreach do java
-                for (clsAlertas percorre : clsAlertas.carregaAlertas(1, mLocalAtual)) {
+                for (clsAlertas percorre : clsAlertas.carregaAlertas(raioCargaMarcadores, localCarga)) {
                     // .icon personaliza o ícone,
                     //adiciona o marcador ver https://developers.google.com/maps/documentation/android/marker#customize_the_marker_image
                     objMapa.addMarker(new MarkerOptions().position(percorre.latlonAlerta).title(percorre.descricaoAlerta).icon(BitmapDescriptorFactory.fromResource(R.drawable.common_signin_btn_icon_focus_light)));
                 }
-                for (clsEstabelecimentos percorre : clsEstabelecimentos.estabelecimentosPorRaio(1, mLocalAtual)) {
+                for (clsEstabelecimentos percorre : clsEstabelecimentos.estabelecimentosPorRaio(raioCargaMarcadores, localCarga)) {
                     objMapa.addMarker(new MarkerOptions().position(percorre.latlonEstabelecimento).title(percorre.nomeEstabelecimento).icon(BitmapDescriptorFactory.fromResource(R.drawable.common_signin_btn_icon_focus_dark)));
                 }
-                return true;
+
+                mLocalUltimaCargaMarcadores = localCarga;
             }
         }
-        return false;
     }
 
 
     @Override
     /* ativado quando o mapa estiver instanciado */
     public void onMapReady(GoogleMap map) {
-        a.append("3");
-
         //passa para um objeto local o googleMap instanciado
         objMapa=map;
-        /*objMapa.setOnCameraChangeListener(new GoogleMap.OnCameraChangeListener() {
+        objMapa.setOnCameraChangeListener(new GoogleMap.OnCameraChangeListener() {
           @Override
           public void onCameraChange(CameraPosition cameraPosition) {
-              Location location = new Location("Test");
-              location.setLatitude(cameraPosition.target.latitude);
-              location.setLongitude(cameraPosition.target.longitude);
-              location.setTime(new Date().getTime());
-              //TODO carregar marcadores conforme movimentação da camera
+              if (!segueUsuario) {
+                  Location location = new Location("Test");
+                  location.setLatitude(cameraPosition.target.latitude);
+                  location.setLongitude(cameraPosition.target.longitude);
+                  location.setTime(new Date().getTime());
+                  if (location.distanceTo(mLocalUltimaCargaMarcadores) > 1000) {
+                      carregaMarcadores(location, 1);
+                  }
+              }
           }
-      });*/
+        });
 
         //ativa botão de localizar minha posição
         objMapa.setMyLocationEnabled(true);
@@ -137,41 +140,36 @@ public class MainActivity extends ActionBarActivity implements OnMapReadyCallbac
     protected void onDestroy() {
         mGerenciadorApiClient.suspendeLocalizacao(mLocationListener);
         mGerenciadorApiClient = null;
-        mLocalAtual = null;
         mLocalUltimaCargaMarcadores = null;
         objMapa = null;
         mLocationListener = null;
-        a.append("0");
         super.onDestroy();
     }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        a.append("1");
-
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        //configura se o método movecamera deve ser acionado ao mudar a localização
+        segueUsuario = true;
+
         //cria o listener local de localização e implementa o método de monitoramento do mesmo
         mLocationListener = new LocationListener() {
             @Override
-            public void onLocationChanged(Location location) {
-                a.append("4");
-                mLocalAtual = location;
+            public void onLocationChanged(Location localAtual) {
                 //confere se a camera deve ser movida
                 if (segueUsuario) {
-                    moveCamera(objMapa);
+                    moveCamera(localAtual);
                 }
                 //se não houver nenhuma carga de dados anterior, executa
                 if (mLocalUltimaCargaMarcadores == null) {
-                    if (carregaMarcadores())
-                        mLocalUltimaCargaMarcadores = mLocalAtual;
+                    carregaMarcadores(localAtual, 1);
                 }
                 //compara a distância da última carga de dados realizada com a atual, em metros
-                else if (mLocalAtual.distanceTo(mLocalUltimaCargaMarcadores) > 300) {
-                    mLocalUltimaCargaMarcadores = mLocalAtual;
-                    carregaMarcadores();
+                else if (localAtual.distanceTo(mLocalUltimaCargaMarcadores) > 300) {
+                    carregaMarcadores(localAtual, 1);
                 }
-
             }
         };
 
@@ -188,10 +186,7 @@ public class MainActivity extends ActionBarActivity implements OnMapReadyCallbac
     @Override
     protected void onPostResume()
     {
-        a.append("2");
         super.onPostResume();
-        //configura se o método movecamera deve ser acionado ao mudar a localização
-        segueUsuario = true;
 
         //confere se o GPS está ligado
         LocationManager locationManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);

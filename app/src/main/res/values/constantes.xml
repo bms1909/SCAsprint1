@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <integer name="distancia_entre_cargas">300</integer>
+    <integer name="zoom_camera">17</integer>
+    <integer name="raio_longo_carga_marcadores">1</integer>
+</resources>
