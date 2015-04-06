@@ -78,16 +78,6 @@ public class clsApiClientSingleton {
         }
     }
 
-    /* TODO excluir se não utilizado
-    public void retomaLocalizacao(Context contexto, LocationListener mLocationListener) {
-        if (mGoogleApiClient == null) {
-            criaApiClient(contexto);
-            INSTANCE.mLocationListener=mLocationListener;
-        }
-        solicitaLocalizacao(mLocationListener);
-    }
-    */
-
     public void suspendeLocalizacao(LocationListener mLocationListener) {
         if (mGoogleApiClient != null && mLocationListener != null)
             LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient, mLocationListener);

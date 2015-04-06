@@ -10,7 +10,6 @@ import org.json.JSONObject;
 import java.util.concurrent.ExecutionException;
 
 import ulbra.bms.scaid5.controllers.clsJSONget;
-import ulbra.bms.scaid5.controllers.clsJSONpost;
 
 /**
  * Criador por Bruno em 16/03/2015.
@@ -59,7 +58,8 @@ public class clsUsuarios {
         return retorno;
     }
 
-    public boolean cadastraUsuario() {
-        return clsJSONpost.executaPost("http://scaws.azurewebsites.net/api/clsUsuarios?nome=" + Uri.encode(this.nomeUsuario) + "&email=" + Uri.encode(this.emailUsuario) + "&senha=" + Uri.encode(this.senhaUsuario));
-    }
+  /*  public boolean cadastraUsuario() {
+        clsJSONpost executor = clsJSONpost.getInstance();
+        return executor.executaPost("http://scaws.azurewebsites.net/api/clsUsuarios?nome=" + Uri.encode(this.nomeUsuario) + "&email=" + Uri.encode(this.emailUsuario) + "&senha=" + Uri.encode(this.senhaUsuario));
+    }*/
 }
