@@ -240,7 +240,8 @@ public class MainActivity extends ActionBarActivity implements OnMapReadyCallbac
 
     @Override
     protected void onDestroy() {
-        mGerenciadorApiClient.suspendeLocalizacao(mLocationListener);
+        if (mGerenciadorApiClient != null)
+            mGerenciadorApiClient.suspendeLocalizacao(mLocationListener);
         mGerenciadorApiClient = null;
         mLocalUltimaCargaMarcadores = null;
         objMapa = null;
